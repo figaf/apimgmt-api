@@ -4,7 +4,6 @@ import com.figaf.integration.apimgmt.entity.ApiProxyMetaData;
 import com.figaf.integration.apimgmt.response_parser.ApiProxyObjectParser;
 import com.figaf.integration.common.client.wrapper.CommonClientWrapper;
 import com.figaf.integration.common.entity.CommonClientWrapperEntity;
-import com.figaf.integration.common.entity.RestTemplateWrapper;
 import com.figaf.integration.common.exception.ClientIntegrationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -51,9 +50,9 @@ public class ApiProxyObjectClient extends CommonClientWrapper {
         }
 
         return executeGet(
-            commonClientWrapperEntity,
-            path,
-            body -> ApiProxyObjectParser.buildInnerObjectsNameToApiProxyMetaDataMap(body, innerObjectNames)
+                commonClientWrapperEntity,
+                path,
+                body -> ApiProxyObjectParser.buildInnerObjectsNameToApiProxyMetaDataMap(body, innerObjectNames)
         );
 
     }
@@ -61,25 +60,28 @@ public class ApiProxyObjectClient extends CommonClientWrapper {
     public byte[] downloadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName) {
         log.debug("#downloadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName): {}, {}", commonClientWrapperEntity, apiProxyName);
         return executeGet(
-            commonClientWrapperEntity,
-            String.format(API_PROXIES_TRANSPORT_WITH_NAME, apiProxyName),
-            resolvedBody -> resolvedBody,
-            byte[].class
+                commonClientWrapperEntity,
+                String.format(API_PROXIES_TRANSPORT_WITH_NAME, apiProxyName),
+                resolvedBody -> resolvedBody,
+                byte[].class
         );
     }
 
     public void uploadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName, byte[] bundledApiProxy) {
         log.debug("#uploadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName, byte[] bundledApiProxy): {}, {}", commonClientWrapperEntity, apiProxyName);
 
-        RestTemplateWrapper restTemplateWrapper = getRestTemplateWrapper(commonClientWrapperEntity);
-        String token = retrieveToken(commonClientWrapperEntity, restTemplateWrapper.getRestTemplate(), "/apiportal/api/1.0/Management.svc/APIProxies");
-
-        String url = buildUrl(commonClientWrapperEntity, API_PROXIES_TRANSPORT);
-
-        uploadApiProxy(bundledApiProxy, url, restTemplateWrapper.getRestTemplate(), token);
+        executeMethod(
+                commonClientWrapperEntity,
+                "/apiportal/api/1.0/Management.svc/APIProxies",
+                API_PROXIES_TRANSPORT,
+                (url, token, restTemplateWrapper) -> {
+                    uploadApiProxy(bundledApiProxy, url, token, restTemplateWrapper.getRestTemplate());
+                    return null;
+                }
+        );
     }
 
-    private void uploadApiProxy(byte[] bundledApiProxy, String url, RestTemplate restTemplate, String token) {
+    private void uploadApiProxy(byte[] bundledApiProxy, String url, String token, RestTemplate restTemplate) {
 
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("X-CSRF-Token", token);
@@ -90,7 +92,7 @@ public class ApiProxyObjectClient extends CommonClientWrapper {
 
         if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException("Couldn't execute api proxy uploading:\n" +
-                responseEntity.getBody()
+                    responseEntity.getBody()
             );
         }
 

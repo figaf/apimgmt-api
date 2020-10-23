@@ -4,7 +4,6 @@ import com.figaf.integration.apimgmt.entity.KeyMapEntryValue;
 import com.figaf.integration.apimgmt.response_parser.KeyMapEntriesParser;
 import com.figaf.integration.common.client.wrapper.CommonClientWrapper;
 import com.figaf.integration.common.entity.CommonClientWrapperEntity;
-import com.figaf.integration.common.entity.RestTemplateWrapper;
 import com.figaf.integration.common.exception.ClientIntegrationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -34,24 +33,28 @@ public class KeyMapEntriesClient extends CommonClientWrapper {
     public List<KeyMapEntryValue> getKeyMapEntryValues(String keyMapEntry, CommonClientWrapperEntity commonClientWrapperEntity) {
         log.debug("#getKeyMapEntryValues(String keyMapEntry, CommonClientWrapperEntity commonClientWrapperEntity): {}, {}", keyMapEntry, commonClientWrapperEntity);
         return executeGet(
-            commonClientWrapperEntity,
-            String.format(KEY_MAP_ENTRY_VALUES, keyMapEntry),
-            body -> KeyMapEntriesParser.buildKeyMapEntryValuesList(keyMapEntry, body)
+                commonClientWrapperEntity,
+                String.format(KEY_MAP_ENTRY_VALUES, keyMapEntry),
+                body -> KeyMapEntriesParser.buildKeyMapEntryValuesList(keyMapEntry, body)
         );
     }
 
     public void deleteKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, CommonClientWrapperEntity commonClientWrapperEntity) {
         log.debug("#deleteKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, CommonClientWrapperEntity commonClientWrapperEntity): {}, {}, {}", keyMapEntry, keyMapEntryValueName, commonClientWrapperEntity);
 
-        RestTemplateWrapper restTemplateWrapper = getRestTemplateWrapper(commonClientWrapperEntity);
-        String token = retrieveToken(commonClientWrapperEntity, restTemplateWrapper.getRestTemplate(), "/apiportal/api/1.0/Management.svc/KeyMapEntryValues");
+        executeMethod(
+                commonClientWrapperEntity,
+                "/apiportal/api/1.0/Management.svc/KeyMapEntryValues",
+                String.format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName),
+                (url, token, restTemplateWrapper) -> {
+                    deleteKeyMapEntryValue(keyMapEntry, keyMapEntryValueName, url, token, restTemplateWrapper.getRestTemplate());
+                    return null;
+                }
+        );
 
-        String url = buildUrl(commonClientWrapperEntity, String.format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName));
-
-        deleteKeyMapEntryValue(keyMapEntry, keyMapEntryValueName, restTemplateWrapper.getRestTemplate(), url, token);
     }
 
-    private void deleteKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, RestTemplate restTemplate, String url, String token) {
+    private void deleteKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String url, String token, RestTemplate restTemplate) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.add("X-CSRF-Token", token);
         HttpEntity<Void> httpEntity = new HttpEntity<>(httpHeaders);
@@ -60,11 +63,11 @@ public class KeyMapEntriesClient extends CommonClientWrapper {
 
         if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException(String.format(
-                "Couldn't delete key map entry value <%s, %s>: Code: %d, Message: %s",
-                keyMapEntry,
-                keyMapEntryValueName,
-                responseEntity.getStatusCode().value(),
-                responseEntity.getBody())
+                    "Couldn't delete key map entry value <%s, %s>: Code: %d, Message: %s",
+                    keyMapEntry,
+                    keyMapEntryValueName,
+                    responseEntity.getStatusCode().value(),
+                    responseEntity.getBody())
             );
         }
     }
