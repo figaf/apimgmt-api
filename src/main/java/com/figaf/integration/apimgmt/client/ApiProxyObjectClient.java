@@ -2,8 +2,8 @@ package com.figaf.integration.apimgmt.client;
 
 import com.figaf.integration.apimgmt.entity.ApiProxyMetaData;
 import com.figaf.integration.apimgmt.response_parser.ApiProxyObjectParser;
-import com.figaf.integration.common.client.wrapper.CommonClientWrapper;
-import com.figaf.integration.common.entity.CommonClientWrapperEntity;
+import com.figaf.integration.common.client.BaseClient;
+import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.exception.ClientIntegrationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
@@ -21,7 +21,7 @@ import java.util.Set;
  */
 
 @Slf4j
-public class ApiProxyObjectClient extends CommonClientWrapper {
+public class ApiProxyObjectClient extends BaseClient {
 
     private static final String API_PROXIES = "/apiportal/api/1.0/Management.svc/APIProxies?$format=json";
     private static final String API_PROXY_WITH_INNER_OBJECTS_METADATA = "/apiportal/api/1.0/Management.svc/APIProxies('%s')?$format=json";
@@ -32,46 +32,46 @@ public class ApiProxyObjectClient extends CommonClientWrapper {
         super(ssoUrl);
     }
 
-    public List<ApiProxyMetaData> getApiObjectMetaData(CommonClientWrapperEntity commonClientWrapperEntity) {
-        log.debug("#getApiObjectMetaData(CommonClientWrapperEntity commonClientWrapperEntity): {}", commonClientWrapperEntity);
-        return executeGet(commonClientWrapperEntity, API_PROXIES, ApiProxyObjectParser::buildApiProxyMetaDataList);
+    public List<ApiProxyMetaData> getApiObjectMetaData(RequestContext requestContext) {
+        log.debug("#getApiObjectMetaData(RequestContext requestContext): {}", requestContext);
+        return executeGet(requestContext, API_PROXIES, ApiProxyObjectParser::buildApiProxyMetaDataList);
     }
 
-    public ApiProxyMetaData getApiObjectMetaData(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName) {
-        log.debug("#getApiObjectMetaData(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName): {}, {}", commonClientWrapperEntity, apiProxyName);
-        return executeGet(commonClientWrapperEntity, String.format(API_PROXY_WITH_INNER_OBJECTS_METADATA, apiProxyName), ApiProxyObjectParser::buildApiProxyMetaData);
+    public ApiProxyMetaData getApiObjectMetaData(RequestContext requestContext, String apiProxyName) {
+        log.debug("#getApiObjectMetaData(RequestContext requestContext, String apiProxyName): {}, {}", requestContext, apiProxyName);
+        return executeGet(requestContext, String.format(API_PROXY_WITH_INNER_OBJECTS_METADATA, apiProxyName), ApiProxyObjectParser::buildApiProxyMetaData);
     }
 
-    public Map<String, ApiProxyMetaData> getApiObjectMetaDataForInnerObjects(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName, Set<String> innerObjectNames) {
-        log.debug("#getApiObjectMetaDataWithInnerdObjects(CommonClientWrapperEntity commonClientWrapperEntity, Set<String> innerObjectNames): {}, {}", commonClientWrapperEntity, innerObjectNames);
+    public Map<String, ApiProxyMetaData> getApiObjectMetaDataForInnerObjects(RequestContext requestContext, String apiProxyName, Set<String> innerObjectNames) {
+        log.debug("#getApiObjectMetaDataWithInnerdObjects(RequestContext requestContext, Set<String> innerObjectNames): {}, {}", requestContext, innerObjectNames);
         String path = String.format(API_PROXY_WITH_INNER_OBJECTS_METADATA, apiProxyName);
         if (CollectionUtils.isNotEmpty(innerObjectNames)) {
             path = String.format("%s&$expand=%s", path, StringUtils.join(innerObjectNames, ","));
         }
 
         return executeGet(
-                commonClientWrapperEntity,
+                requestContext,
                 path,
                 body -> ApiProxyObjectParser.buildInnerObjectsNameToApiProxyMetaDataMap(body, innerObjectNames)
         );
 
     }
 
-    public byte[] downloadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName) {
-        log.debug("#downloadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName): {}, {}", commonClientWrapperEntity, apiProxyName);
+    public byte[] downloadApiProxy(RequestContext requestContext, String apiProxyName) {
+        log.debug("#downloadApiProxy(RequestContext requestContext, String apiProxyName): {}, {}", requestContext, apiProxyName);
         return executeGet(
-                commonClientWrapperEntity,
+                requestContext,
                 String.format(API_PROXIES_TRANSPORT_WITH_NAME, apiProxyName),
                 resolvedBody -> resolvedBody,
                 byte[].class
         );
     }
 
-    public void uploadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName, byte[] bundledApiProxy) {
-        log.debug("#uploadApiProxy(CommonClientWrapperEntity commonClientWrapperEntity, String apiProxyName, byte[] bundledApiProxy): {}, {}", commonClientWrapperEntity, apiProxyName);
+    public void uploadApiProxy(RequestContext requestContext, String apiProxyName, byte[] bundledApiProxy) {
+        log.debug("#uploadApiProxy(RequestContext requestContext, String apiProxyName, byte[] bundledApiProxy): {}, {}", requestContext, apiProxyName);
 
         executeMethod(
-                commonClientWrapperEntity,
+                requestContext,
                 "/apiportal/api/1.0/Management.svc/APIProxies",
                 API_PROXIES_TRANSPORT,
                 (url, token, restTemplateWrapper) -> {
