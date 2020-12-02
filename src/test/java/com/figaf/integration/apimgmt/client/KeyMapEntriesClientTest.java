@@ -2,6 +2,7 @@ package com.figaf.integration.apimgmt.client;
 
 import com.figaf.integration.apimgmt.data_provider.AgentTestDataProvider;
 import com.figaf.integration.common.data_provider.AgentTestData;
+import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,7 +22,7 @@ class KeyMapEntriesClientTest {
 
     @BeforeAll
     static void setUp() {
-        keyMapEntriesClient = new KeyMapEntriesClient("https://accounts.sap.com/saml2/idp/sso");
+        keyMapEntriesClient = new KeyMapEntriesClient("https://accounts.sap.com/saml2/idp/sso", new HttpClientsFactory());
     }
 
     @ParameterizedTest
