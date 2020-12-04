@@ -6,6 +6,7 @@ import com.figaf.integration.apimgmt.response_parser.KeyMapEntriesParser;
 import com.figaf.integration.common.client.BaseClient;
 import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.exception.ClientIntegrationException;
+import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.*;
@@ -68,9 +69,8 @@ public class KeyMapEntriesClient extends BaseClient {
                                                                                            "MaxDataServiceVersion: 2.0" + System.lineSeparator() +
                                                                                            "DataServiceVersion: 2.0" + System.lineSeparator() + System.lineSeparator() + System.lineSeparator();
 
-
-    public KeyMapEntriesClient(String ssoUrl) {
-        super(ssoUrl);
+    public KeyMapEntriesClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
+        super(ssoUrl, httpClientsFactory);
     }
 
     public List<String> getKeyMapEntries(RequestContext requestContext) {

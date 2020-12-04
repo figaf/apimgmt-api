@@ -5,6 +5,7 @@ import com.figaf.integration.apimgmt.response_parser.ApiProxyObjectParser;
 import com.figaf.integration.common.client.BaseClient;
 import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.exception.ClientIntegrationException;
+import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -28,8 +29,8 @@ public class ApiProxyObjectClient extends BaseClient {
     private static final String API_PROXIES_TRANSPORT_WITH_NAME = "/apiportal/api/1.0/Transport.svc/APIProxies?name=%s";
     private static final String API_PROXIES_TRANSPORT = "/apiportal/api/1.0/Transport.svc/APIProxies";
 
-    public ApiProxyObjectClient(String ssoUrl) {
-        super(ssoUrl);
+    public ApiProxyObjectClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
+        super(ssoUrl, httpClientsFactory);
     }
 
     public List<ApiProxyMetaData> getApiObjectMetaData(RequestContext requestContext) {

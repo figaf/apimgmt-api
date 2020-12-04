@@ -3,6 +3,7 @@ package com.figaf.integration.apimgmt.client;
 import com.figaf.integration.apimgmt.data_provider.AgentTestDataProvider;
 import com.figaf.integration.apimgmt.entity.ApiProxyMetaData;
 import com.figaf.integration.common.data_provider.AgentTestData;
+import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -22,7 +23,7 @@ class ApiProxyObjectClientTest {
 
     @BeforeAll
     static void setUp() {
-        apiProxyObjectClient = new ApiProxyObjectClient("https://accounts.sap.com/saml2/idp/sso");
+        apiProxyObjectClient = new ApiProxyObjectClient("https://accounts.sap.com/saml2/idp/sso", new HttpClientsFactory());
     }
 
     @ParameterizedTest
