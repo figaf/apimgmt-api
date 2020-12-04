@@ -5,6 +5,7 @@ import com.figaf.integration.apimgmt.response_parser.KeyMapEntriesParser;
 import com.figaf.integration.common.client.BaseClient;
 import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.exception.ClientIntegrationException;
+import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
@@ -21,8 +22,8 @@ public class KeyMapEntriesClient extends BaseClient {
     private static final String KEY_MAP_ENTRY_VALUES = "/apiportal/api/1.0/Management.svc/KeyMapEntries('%s')/keyMapEntryValues?forceUpdateFromRT=true&$format=json";
     private static final String KEY_MAP_ENTRY_VALUE = "/apiportal/api/1.0/Management.svc/KeyMapEntryValues(map_name='%s',name='%s')";
 
-    public KeyMapEntriesClient(String ssoUrl) {
-        super(ssoUrl);
+    public KeyMapEntriesClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
+        super(ssoUrl, httpClientsFactory);
     }
 
     public List<String> getKeyMapEntries(RequestContext requestContext) {
