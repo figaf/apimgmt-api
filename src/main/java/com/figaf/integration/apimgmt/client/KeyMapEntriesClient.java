@@ -12,6 +12,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.*;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -85,20 +88,35 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public KeyMapEntryMetaData getKeyMapEntryMetaData(String keyMapEntry, RequestContext requestContext) {
         log.debug("#getKeyMapEntriesList(RequestContext requestContext): {}", requestContext);
-        return executeGet(
-                requestContext,
-                String.format(KEY_MAP_ENTRY, keyMapEntry),
-                KeyMapEntriesParser::buildKeyMapEntryMetaData
-        );
+        try {
+            return executeGet(
+                    requestContext,
+                    String.format(
+                            KEY_MAP_ENTRY,
+                            URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
+                    ),
+                    KeyMapEntriesParser::buildKeyMapEntryMetaData
+            );
+        } catch (UnsupportedEncodingException ex) {
+            throw new ClientIntegrationException("Couldn't get key map entry meta data: " + ex.getMessage(), ex);
+        }
     }
 
     public List<KeyMapEntryValue> getKeyMapEntryValues(String keyMapEntry, RequestContext requestContext) {
         log.debug("#getKeyMapEntryValues(String keyMapEntry, RequestContext requestContext): {}, {}", keyMapEntry, requestContext);
-        return executeGet(
-                requestContext,
-                String.format(KEY_MAP_ENTRY_VALUES_WITH_PARAMETERS, keyMapEntry),
-                body -> KeyMapEntriesParser.buildKeyMapEntryValuesList(keyMapEntry, body)
-        );
+
+        try {
+            return executeGet(
+                    requestContext,
+                    String.format(
+                            KEY_MAP_ENTRY_VALUES_WITH_PARAMETERS,
+                            URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
+                    ),
+                    body -> KeyMapEntriesParser.buildKeyMapEntryValuesList(keyMapEntry, body)
+            );
+        } catch (UnsupportedEncodingException ex) {
+            throw new ClientIntegrationException("Couldn't get key map entry values: " + ex.getMessage(), ex);
+        }
     }
 
     public Map<String, String> getKeyToValueMap(String keyMapEntry, RequestContext requestContext) {
@@ -117,8 +135,13 @@ public class KeyMapEntriesClient extends BaseClient {
     }
 
     public void createNewKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext) {
-        log.debug("#createNewKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
-                keyMapEntryMetaData, requestContext);
+        if (!keyMapEntryMetaData.isEncrypted()) {
+            log.debug("#createNewKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
+                    keyMapEntryMetaData, requestContext);
+        } else {
+            log.debug("#createNewKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
+                    keyMapEntryMetaData.getName(), requestContext);
+        }
 
         executeMethod(
                 requestContext,
@@ -132,8 +155,8 @@ public class KeyMapEntriesClient extends BaseClient {
     }
 
     public void updateKeyMapEntry(String keyMapEntry, Map<String, String> keyToValueMap, RequestContext requestContext) {
-        log.debug("#updateKeyMapEntry(String keyMapEntry, Map<String, String> keyToValueMap, RequestContext requestContext): {}, {}, {}",
-                keyMapEntry, keyToValueMap, requestContext);
+        log.debug("#updateKeyMapEntry(String keyMapEntry, Map<String, String> keyToValueMap, RequestContext requestContext): {}, {}",
+                keyMapEntry, requestContext);
 
         List<String> keyMapEntries = getKeyMapEntries(requestContext);
 
@@ -149,22 +172,31 @@ public class KeyMapEntriesClient extends BaseClient {
                 KEY_MAP_ENTRY_VALUES,
                 BATCH_REQUEST,
                 (url, token, restTemplateWrapper) -> {
-                    updateKeyMapEntry(
-                            keyMapEntry,
-                            keyToValueMap,
-                            getKeyToValueMap(keyMapEntry, requestContext),
-                            url,
-                            token,
-                            restTemplateWrapper.getRestTemplate()
-                    );
-                    return null;
+                    try {
+                        updateKeyMapEntry(
+                                keyMapEntry,
+                                keyToValueMap,
+                                getKeyToValueMap(keyMapEntry, requestContext),
+                                url,
+                                token,
+                                restTemplateWrapper.getRestTemplate()
+                        );
+                        return null;
+                    } catch (UnsupportedEncodingException ex) {
+                        throw new ClientIntegrationException("Couldn't update key map entry: " + ex.getMessage(), ex);
+                    }
                 }
         );
     }
 
     public void createOrUpdateKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext) {
-        log.debug("#createOrUpdateKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
-                keyMapEntryMetaData, requestContext);
+        if (!keyMapEntryMetaData.isEncrypted()) {
+            log.debug("#createOrUpdateKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
+                    keyMapEntryMetaData, requestContext);
+        } else {
+            log.debug("#createOrUpdateKeyMapEntry(KeyMapEntryMetaData keyMapEntryMetaData, RequestContext requestContext): {}, {}",
+                    keyMapEntryMetaData.getName(), requestContext);
+        }
 
         List<String> keyMapEntries = getKeyMapEntries(requestContext);
 
@@ -194,15 +226,19 @@ public class KeyMapEntriesClient extends BaseClient {
                     KEY_MAP_ENTRY_VALUES,
                     BATCH_REQUEST,
                     (url, token, restTemplateWrapper) -> {
-                        updateKeyMapEntry(
-                                keyMapEntryMetaData.getName(),
-                                keyToValueMap,
-                                remoteKeyToValueMap,
-                                url,
-                                token,
-                                restTemplateWrapper.getRestTemplate()
-                        );
-                        return null;
+                        try {
+                            updateKeyMapEntry(
+                                    keyMapEntryMetaData.getName(),
+                                    keyToValueMap,
+                                    remoteKeyToValueMap,
+                                    url,
+                                    token,
+                                    restTemplateWrapper.getRestTemplate()
+                            );
+                            return null;
+                        } catch (UnsupportedEncodingException ex) {
+                            throw new ClientIntegrationException("Couldn't update key map entry: " + ex.getMessage(), ex);
+                        }
                     }
             );
 
@@ -210,8 +246,8 @@ public class KeyMapEntriesClient extends BaseClient {
     }
 
     public void addKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String keyMapEntryValue, RequestContext requestContext) {
-        log.debug("#addKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String keyMapEntryValue, RequestContext requestContext): {}, {}, {}, {}",
-                keyMapEntry, keyMapEntryValueName, keyMapEntryValue, requestContext);
+        log.debug("#addKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String keyMapEntryValue, RequestContext requestContext): {}, {}, {}",
+                keyMapEntry, keyMapEntryValueName, requestContext);
 
         executeMethod(
                 requestContext,
@@ -233,8 +269,8 @@ public class KeyMapEntriesClient extends BaseClient {
     }
 
     public void updateKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String newKeyMapEntryValue, RequestContext requestContext) {
-        log.debug("#updateKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String newKeyMapEntryValue, RequestContext requestContext): {}, {}, {}, {}",
-                keyMapEntry, keyMapEntryValueName, newKeyMapEntryValue, requestContext);
+        log.debug("#updateKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String newKeyMapEntryValue, RequestContext requestContext): {}, {}, {}",
+                keyMapEntry, keyMapEntryValueName, requestContext);
 
         executeMethod(
                 requestContext,
@@ -302,7 +338,7 @@ public class KeyMapEntriesClient extends BaseClient {
             String url,
             String token,
             RestTemplate restTemplate
-    ) {
+    ) throws UnsupportedEncodingException {
 
         Map<String, String> valuesForAdding = new HashMap<>();
         Map<String, String> valuesForUpdating = new HashMap<>();
@@ -342,7 +378,7 @@ public class KeyMapEntriesClient extends BaseClient {
                     valueForAdding.getKey(),
                     valueForAdding.getValue(),
                     keyMapEntry,
-                    keyMapEntry
+                    URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
             );
 
             changeSets.append(String.format(
@@ -358,8 +394,8 @@ public class KeyMapEntriesClient extends BaseClient {
 
             changeSets.append(String.format(
                     BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE,
-                    keyMapEntry,
-                    valueForUpdating.getKey(),
+                    URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20"),
+                    URLEncoder.encode(valueForUpdating.getKey(), StandardCharsets.UTF_8.name()).replace("+", "%20"),
                     requestId,
                     valueForUpdating.getValue().length() + 12,
                     valueForUpdating.getValue()
@@ -371,8 +407,8 @@ public class KeyMapEntriesClient extends BaseClient {
 
             changeSets.append(String.format(
                     BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE,
-                    keyMapEntry,
-                    valueForDeletion.getKey(),
+                    URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20"),
+                    URLEncoder.encode(valueForDeletion.getKey(), StandardCharsets.UTF_8.name()).replace("+", "%20"),
                     requestId
             ));
         }
@@ -433,7 +469,7 @@ public class KeyMapEntriesClient extends BaseClient {
                 "}",
                 keyMapEntry,
                 keyMapEntryValueName,
-                keyMapEntryValueName,
+                keyMapEntryValue,
                 keyMapEntry
         );
 
@@ -443,9 +479,8 @@ public class KeyMapEntriesClient extends BaseClient {
 
         if (!HttpStatus.CREATED.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException(String.format(
-                    "Couldn't create key value entry <%s, %s> in key map entry %s: Code: %d, Message: %s",
+                    "Couldn't create key value entry %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
-                    keyMapEntryValue,
                     keyMapEntry,
                     responseEntity.getStatusCode().value(),
                     responseEntity.getBody())
@@ -478,9 +513,8 @@ public class KeyMapEntriesClient extends BaseClient {
 
         if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException(String.format(
-                    "Couldn't update key value entry <%s, %s> in key map entry %s: Code: %d, Message: %s",
+                    "Couldn't update key value entry %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
-                    keyMapEntryValue,
                     keyMapEntry,
                     responseEntity.getStatusCode().value(),
                     responseEntity.getBody())
@@ -497,9 +531,9 @@ public class KeyMapEntriesClient extends BaseClient {
 
         if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException(String.format(
-                    "Couldn't delete key map entry value <%s, %s>: Code: %d, Message: %s",
-                    keyMapEntry,
+                    "Couldn't delete key map entry value %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
+                    keyMapEntry,
                     responseEntity.getStatusCode().value(),
                     responseEntity.getBody())
             );
