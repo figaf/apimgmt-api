@@ -1,20 +1,15 @@
 package com.figaf.integration.apimgmt.response_parser;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
+import com.figaf.integration.apimgmt.entity.KeyMapEntryMetaData;
 import com.figaf.integration.apimgmt.entity.KeyMapEntryValue;
 import com.figaf.integration.common.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * @author Arsenii Istlentev
@@ -22,16 +17,7 @@ import java.util.Locale;
 @Slf4j
 public class KeyMapEntriesParser {
 
-    private static final ObjectMapper JSON_OBJECT_MAPPER = new ObjectMapper();
-
-    static {
-        JSON_OBJECT_MAPPER.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        JSON_OBJECT_MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        JSON_OBJECT_MAPPER.setSerializationInclusion(JsonInclude.Include.NON_EMPTY);
-        JSON_OBJECT_MAPPER.setDateFormat(new SimpleDateFormat("E, d MMM yyyy HH:mm:ss z", Locale.ENGLISH));
-    }
-
-    public static List<String> buidKeyMapEntryList(String body) {
+    public static List<String> buildKeyMapEntryList(String body) {
         JSONObject response = new JSONObject(body);
         JSONArray keyMapEntriesJsonArray = response.getJSONObject("d").getJSONArray("results");
 
@@ -39,6 +25,24 @@ public class KeyMapEntriesParser {
         for (int ind = 0; ind < keyMapEntriesJsonArray.length(); ind++) {
             JSONObject keyMapEntryElement = keyMapEntriesJsonArray.getJSONObject(ind);
             keyMapEntries.add(Utils.optString(keyMapEntryElement, "name"));
+        }
+
+        return keyMapEntries;
+    }
+
+    public static KeyMapEntryMetaData buildKeyMapEntryMetaData(String body) {
+        JSONObject response = new JSONObject(body);
+        JSONObject keyMapEntryJsonObject = response.getJSONObject("d");
+        return parseKeyMapEntryMetaData(keyMapEntryJsonObject);
+    }
+
+    public static List<KeyMapEntryMetaData> buildKeyMapEntryMetaDataList(String body) {
+        JSONObject response = new JSONObject(body);
+        JSONArray keyMapEntryJsonArray = response.getJSONObject("d").getJSONArray("results");
+
+        List<KeyMapEntryMetaData> keyMapEntries = new ArrayList<>();
+        for (int ind = 0; ind < keyMapEntryJsonArray.length(); ind++) {
+            keyMapEntries.add(parseKeyMapEntryMetaData(keyMapEntryJsonArray.getJSONObject(ind)));
         }
 
         return keyMapEntries;
@@ -54,34 +58,34 @@ public class KeyMapEntriesParser {
 
             String keyMapEntryValueName = Utils.optString(keyMapEntryValueElement, "name");
 
-            String valueJsonObjectString = Utils.optString(keyMapEntryValueElement, "value");
+            String keyMapEntryValue = Utils.optString(keyMapEntryValueElement, "value");
 
-            if (valueJsonObjectString == null) {
-                log.debug(String.format("KeyMapEntryValue element %s of %s map has null value, skipping its processing.",
-                    Utils.optString(keyMapEntryValueElement, "name"),
-                    keyMapEntry
-                ));
-                continue;
-            }
-
-            try {
-                KeyMapEntryValue.Value valueObject = JSON_OBJECT_MAPPER.readValue(valueJsonObjectString, KeyMapEntryValue.Value.class);
-                keyMapEntryValues.add(new KeyMapEntryValue(
-                    keyMapEntry,
-                    keyMapEntryValueName,
-                    valueObject
-                ));
-            } catch (Exception ex) {
-                log.warn(String.format("Couldn't parse value of kvm entry <%s,%s>: %s. Error: %s",
-                    keyMapEntry,
-                    keyMapEntryValueName,
-                    valueJsonObjectString,
-                    ExceptionUtils.getRootCause(ex)
-                ));
-            }
+            keyMapEntryValues.add(new KeyMapEntryValue(keyMapEntry, keyMapEntryValueName, keyMapEntryValue));
         }
 
         return keyMapEntryValues;
+    }
+
+    private static KeyMapEntryMetaData parseKeyMapEntryMetaData(JSONObject keyMapEntryElement) {
+        KeyMapEntryMetaData keyMapEntry = new KeyMapEntryMetaData();
+        keyMapEntry.setName(keyMapEntryElement.getString("name"));
+        keyMapEntry.setScope(keyMapEntryElement.getString("scope"));
+        keyMapEntry.setEncrypted(keyMapEntryElement.getBoolean("encrypted"));
+
+        JSONObject keyMapEntryLifeCycleElement = keyMapEntryElement.getJSONObject("life_cycle");
+        String createdAt = Utils.optString(keyMapEntryLifeCycleElement, "created_at");
+        keyMapEntry.setCreationDate(createdAt != null
+                ? new Timestamp(Long.parseLong(createdAt.replaceAll("[^0-9]", "")))
+                : null
+        );
+        keyMapEntry.setCreatedBy(Utils.optString(keyMapEntryLifeCycleElement, "created_by"));
+        String changedAt = Utils.optString(keyMapEntryLifeCycleElement, "changed_at");
+        keyMapEntry.setModificationDate(changedAt != null
+                ? new Timestamp(Long.parseLong(changedAt.replaceAll("[^0-9]", "")))
+                : null
+        );
+        keyMapEntry.setModifiedBy(Utils.optString(keyMapEntryLifeCycleElement, "changed_by"));
+        return keyMapEntry;
     }
 
 }
