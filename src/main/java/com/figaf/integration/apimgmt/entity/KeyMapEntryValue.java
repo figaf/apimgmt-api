@@ -1,6 +1,8 @@
 package com.figaf.integration.apimgmt.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
+import org.json.JSONPropertyName;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -16,26 +18,9 @@ import java.util.Date;
 @ToString
 public class KeyMapEntryValue implements Serializable {
 
+    @JsonProperty("map_name")
     private String mapName;
     private String name;
-    private Value value;
+    private String value;
 
-    @Getter
-    @Setter
-    @ToString
-    public static class Value implements Serializable {
-
-        private String messageId;
-        private Date currentSystemTime;
-        private Date clientReceivedStartTime;
-        private int timePassedAfterClientReceivedStartTime;
-        private String messageQueryString;
-        private String requestUri;
-        private String apiProxyName;
-        private String apiProxyRevision;
-        private String faultName;
-        private String errorContent;
-        private String errorMessage;
-        private int errorStatusCode;
-    }
 }
