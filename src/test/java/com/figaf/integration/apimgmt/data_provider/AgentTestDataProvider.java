@@ -15,9 +15,14 @@ public class AgentTestDataProvider extends AbstractAgentTestDataProvider {
     @Override
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
         return Stream.of(
-                Arguments.of(buildAgentTestData(
-                        Paths.get("src/test/resources/agent-test-data/apimgmt-neo-1")
-                ))
+                Arguments.of(
+                    buildAgentTestData(
+                        Paths.get("src/test/resources/agent-test-data/apimgmt-cf-1")
+                    ),
+                    buildAgentTestData(
+                        Paths.get("src/test/resources/agent-test-data/apimgmt-cf-2")
+                    )
+                )
         );
     }
 }
