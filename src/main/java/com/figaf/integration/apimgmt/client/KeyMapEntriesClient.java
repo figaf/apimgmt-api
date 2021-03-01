@@ -32,45 +32,48 @@ public class KeyMapEntriesClient extends BaseClient {
     private static final String KEY_MAP_ENTRY_VALUES = "/apiportal/api/1.0/Management.svc/KeyMapEntryValues";
     private static final String KEY_MAP_ENTRY_VALUE = "/apiportal/api/1.0/Management.svc/KeyMapEntryValues(map_name='%s',name='%s')";
 
-    private static final String BATCH_UPDATE_BODY_TEMPLATE = "--%s" + System.lineSeparator() +
-                                                             "Content-Type: multipart/mixed; boundary=%s" + System.lineSeparator() + System.lineSeparator() +
+    // according to HTTP spec https://tools.ietf.org/html/rfc2616#section-2.2, CRLF is a correct line break for HTTP protocol
+    private static final String BATCH_REQUEST_LINE_SEPARATOR = "\r\n";
+    
+    private static final String BATCH_UPDATE_BODY_TEMPLATE = "--%s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                             "Content-Type: multipart/mixed; boundary=%s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
                                                              "%s" +
-                                                             "--%s--" + System.lineSeparator();
+                                                             "--%s--" + BATCH_REQUEST_LINE_SEPARATOR;
 
-    private static final String BATCH_UPDATE_CHANGE_SET_START_TEMPLATE = "--%s" + System.lineSeparator() +
-                                                                         "Content-Type: application/http" + System.lineSeparator() +
-                                                                         "Content-Transfer-Encoding: binary" + System.lineSeparator() + System.lineSeparator();
+    private static final String BATCH_UPDATE_CHANGE_SET_START_TEMPLATE = "--%s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                         "Content-Type: application/http" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                         "Content-Transfer-Encoding: binary" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
-    private static final String BATCH_UPDATE_CHANGE_SET_END_TEMPLATE = "--%s--" + System.lineSeparator() + System.lineSeparator();
+    private static final String BATCH_UPDATE_CHANGE_SET_END_TEMPLATE = "--%s--" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
-    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_ADDING_VALUE_TEMPLATE = "POST KeyMapEntryValues HTTP/1.1" + System.lineSeparator() +
-                                                                                         "RequestId: %s" + System.lineSeparator() +
-                                                                                         "Accept-Language: en" + System.lineSeparator() +
-                                                                                         "Accept: application/json" + System.lineSeparator() +
-                                                                                         "MaxDataServiceVersion: 2.0" + System.lineSeparator() +
-                                                                                         "DataServiceVersion: 2.0" + System.lineSeparator() +
-                                                                                         "Content-Type: application/json" + System.lineSeparator() +
-                                                                                         "Content-Length: %d" + System.lineSeparator() + System.lineSeparator() +
-                                                                                         "%s" + System.lineSeparator();
+    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_ADDING_VALUE_TEMPLATE = "POST KeyMapEntryValues HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "Content-Length: %d" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         "%s" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String PAYLOAD_FOR_ADDING_VALUE_TEMPLATE = "{\"name\":\"%s\",\"value\":\"%s\",\"map_name\":\"%s\",\"keyMapEntry\":{\"__metadata\":{\"uri\":\"KeyMapEntries('%s')\"}}}";
 
-    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE = "PUT KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + System.lineSeparator() +
-                                                                                           "RequestId: %s" + System.lineSeparator() +
-                                                                                           "Accept-Language: en" + System.lineSeparator() +
-                                                                                           "Accept: application/json" + System.lineSeparator() +
-                                                                                           "MaxDataServiceVersion: 2.0" + System.lineSeparator() +
-                                                                                           "DataServiceVersion: 2.0" + System.lineSeparator() +
-                                                                                           "Content-Type: application/json" + System.lineSeparator() +
-                                                                                           "Content-Length: %s" + System.lineSeparator() + System.lineSeparator() +
-                                                                                           "{\"value\":\"%s\"}" + System.lineSeparator();
+    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE = "PUT KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Content-Length: %s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "{\"value\":\"%s\"}" + BATCH_REQUEST_LINE_SEPARATOR;
 
-    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE = "DELETE KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + System.lineSeparator() +
-                                                                                           "RequestId: %s" + System.lineSeparator() +
-                                                                                           "Accept-Language: en" + System.lineSeparator() +
-                                                                                           "Accept: application/json" + System.lineSeparator() +
-                                                                                           "MaxDataServiceVersion: 2.0" + System.lineSeparator() +
-                                                                                           "DataServiceVersion: 2.0" + System.lineSeparator() + System.lineSeparator() + System.lineSeparator();
+    private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE = "DELETE KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
     public KeyMapEntriesClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
         super(ssoUrl, httpClientsFactory);
