@@ -96,6 +96,8 @@ public class ApiProxyObjectParser {
         apiProxyMetaData.setVersion(apiProxyJsonObject.getString("version"));
         apiProxyMetaData.setState(apiProxyJsonObject.getString("state"));
         apiProxyMetaData.setApiType(apiProxyJsonObject.getString("service_code"));
+        String isVersioned = Utils.optString(apiProxyJsonObject, "isVersioned");
+        apiProxyMetaData.setVersioned(StringUtils.isNotBlank(isVersioned) && Boolean.parseBoolean(isVersioned));
 
         JSONObject apiProxyLifeCycleElement = apiProxyJsonObject.getJSONObject("life_cycle");
         String createdAt = Utils.optString(apiProxyLifeCycleElement, "created_at");
