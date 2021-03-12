@@ -21,4 +21,6 @@ public class ApiProxyMetaData {
     private Date modificationDate;
     private String modifiedBy;
 
+    private boolean isVersioned;
+
 }
