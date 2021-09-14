@@ -25,7 +25,7 @@ class KeyMapEntriesClientTest {
 
     @BeforeAll
     static void setUp() {
-        keyMapEntriesClient = new KeyMapEntriesClient("https://accounts.sap.com/saml2/idp/sso", new HttpClientsFactory());
+        keyMapEntriesClient = new KeyMapEntriesClient(new HttpClientsFactory());
     }
 
     @ParameterizedTest

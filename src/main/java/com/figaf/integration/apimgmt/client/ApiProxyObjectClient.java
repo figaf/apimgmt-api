@@ -29,8 +29,8 @@ public class ApiProxyObjectClient extends BaseClient {
     private static final String API_PROXIES_TRANSPORT_WITH_NAME = "/apiportal/api/1.0/Transport.svc/APIProxies?name=%s";
     private static final String API_PROXIES_TRANSPORT = "/apiportal/api/1.0/Transport.svc/APIProxies";
 
-    public ApiProxyObjectClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
-        super(ssoUrl, httpClientsFactory);
+    public ApiProxyObjectClient(HttpClientsFactory httpClientsFactory) {
+        super(httpClientsFactory);
     }
 
     public List<ApiProxyMetaData> getApiObjectMetaData(RequestContext requestContext) {
