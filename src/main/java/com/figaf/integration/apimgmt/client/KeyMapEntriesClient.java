@@ -75,8 +75,8 @@ public class KeyMapEntriesClient extends BaseClient {
                                                                                            "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
                                                                                            "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
-    public KeyMapEntriesClient(String ssoUrl, HttpClientsFactory httpClientsFactory) {
-        super(ssoUrl, httpClientsFactory);
+    public KeyMapEntriesClient(HttpClientsFactory httpClientsFactory) {
+        super(httpClientsFactory);
     }
 
     public List<String> getKeyMapEntries(RequestContext requestContext) {

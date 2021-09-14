@@ -23,7 +23,7 @@ class ApiProxyObjectClientTest {
 
     @BeforeAll
     static void setUp() {
-        apiProxyObjectClient = new ApiProxyObjectClient("https://accounts.sap.com/saml2/idp/sso", new HttpClientsFactory());
+        apiProxyObjectClient = new ApiProxyObjectClient(new HttpClientsFactory());
     }
 
     @ParameterizedTest
