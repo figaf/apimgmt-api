@@ -10,12 +10,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static java.lang.String.format;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 /**
  * @author Arsenii Istlentev
@@ -25,6 +30,7 @@ import java.util.Set;
 public class ApiProxyObjectClient extends BaseClient {
 
     private static final String API_PROXIES = "/apiportal/api/1.0/Management.svc/APIProxies?$format=json";
+    private static final String API_PROXIES_WITH_NAME = "/apiportal/api/1.0/Management.svc/APIProxies('%s')";
     private static final String API_PROXY_WITH_INNER_OBJECTS_METADATA = "/apiportal/api/1.0/Management.svc/APIProxies('%s')?$format=json";
     private static final String API_PROXIES_TRANSPORT_WITH_NAME = "/apiportal/api/1.0/Transport.svc/APIProxies?name=%s";
     private static final String API_PROXIES_TRANSPORT = "/apiportal/api/1.0/Transport.svc/APIProxies";
@@ -40,7 +46,25 @@ public class ApiProxyObjectClient extends BaseClient {
 
     public ApiProxyMetaData getApiObjectMetaData(RequestContext requestContext, String apiProxyName) {
         log.debug("#getApiObjectMetaData(RequestContext requestContext, String apiProxyName): {}, {}", requestContext, apiProxyName);
-        return executeGet(requestContext, String.format(API_PROXY_WITH_INNER_OBJECTS_METADATA, apiProxyName), ApiProxyObjectParser::buildApiProxyMetaData);
+        ApiProxyMetaData apiProxyMetaData = null;
+        try {
+            apiProxyMetaData = executeGet(
+                requestContext,
+                format(API_PROXY_WITH_INNER_OBJECTS_METADATA, apiProxyName),
+                ApiProxyObjectParser::buildApiProxyMetaData
+            );
+        } catch (HttpStatusCodeException ex) {
+            if (!NOT_FOUND.equals(ex.getStatusCode())) {
+                throw ex;
+            }
+        } catch (ClientIntegrationException ex) {
+            if (!(ex.getCause() instanceof HttpStatusCodeException) ||
+                !NOT_FOUND.equals(((HttpStatusCodeException)ex.getCause()).getStatusCode())
+            ) {
+                throw ex;
+            }
+        }
+        return apiProxyMetaData;
     }
 
     public Map<String, ApiProxyMetaData> getApiObjectMetaDataForInnerObjects(RequestContext requestContext, String apiProxyName, Set<String> innerObjectNames) {
@@ -72,13 +96,26 @@ public class ApiProxyObjectClient extends BaseClient {
         log.debug("#uploadApiProxy(RequestContext requestContext, String apiProxyName, byte[] bundledApiProxy): {}, {}", requestContext, apiProxyName);
 
         executeMethod(
-                requestContext,
-                "/apiportal/api/1.0/Management.svc/APIProxies",
-                API_PROXIES_TRANSPORT,
-                (url, token, restTemplateWrapper) -> {
-                    uploadApiProxy(bundledApiProxy, url, token, restTemplateWrapper.getRestTemplate());
-                    return null;
-                }
+            requestContext,
+            API_PROXIES,
+            API_PROXIES_TRANSPORT,
+            (url, token, restTemplateWrapper) -> {
+                uploadApiProxy(bundledApiProxy, url, token, restTemplateWrapper.getRestTemplate());
+                return null;
+            }
+        );
+    }
+
+    public void deleteApiProxy(String apiProxyId, RequestContext requestContext) {
+        log.debug("#deleteApiProxy(String apiProxyId, RequestContext requestContext): {}, {}", apiProxyId, requestContext);
+        executeMethod(
+            requestContext,
+            API_PROXIES,
+            format(API_PROXIES_WITH_NAME, apiProxyId),
+            (url, token, restTemplateWrapper) -> {
+                deleteApiProxy(apiProxyId, url, token, restTemplateWrapper.getRestTemplate());
+                return null;
+            }
         );
     }
 
@@ -94,6 +131,22 @@ public class ApiProxyObjectClient extends BaseClient {
         if (!HttpStatus.OK.equals(responseEntity.getStatusCode())) {
             throw new ClientIntegrationException("Couldn't execute api proxy uploading:\n" +
                     responseEntity.getBody()
+            );
+        }
+
+    }
+
+    private void deleteApiProxy(String apiProxyId, String url, String token, RestTemplate restTemplate) {
+
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        HttpEntity<Void> httpEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, DELETE, httpEntity, String.class);
+        if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
+            throw new ClientIntegrationException(format(
+                "Couldn't delete api proxy %s: Code: %d, Message: %s",
+                apiProxyId,
+                responseEntity.getStatusCode().value(),
+                responseEntity.getBody())
             );
         }
 

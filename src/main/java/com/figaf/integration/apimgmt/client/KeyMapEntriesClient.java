@@ -10,12 +10,18 @@ import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+
+import static java.lang.String.format;
+import static org.springframework.http.HttpMethod.DELETE;
+import static org.springframework.http.HttpStatus.NOT_FOUND;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 
 /**
  * @author Arsenii Istlentev
@@ -31,6 +37,7 @@ public class KeyMapEntriesClient extends BaseClient {
     private static final String KEY_MAP_ENTRY = "/apiportal/api/1.0/Management.svc/KeyMapEntries('%s')?forceUpdateFromRT=true&$format=json";
     private static final String KEY_MAP_ENTRY_VALUES = "/apiportal/api/1.0/Management.svc/KeyMapEntryValues";
     private static final String KEY_MAP_ENTRY_VALUE = "/apiportal/api/1.0/Management.svc/KeyMapEntryValues(map_name='%s',name='%s')";
+    private static final String KEY_MAP_ENTRIES_WITH_NAME = "/apiportal/api/1.0/Management.svc/KeyMapEntries('%s')";
 
     // according to HTTP spec https://tools.ietf.org/html/rfc2616#section-2.2, CRLF is a correct line break for HTTP protocol
     private static final String BATCH_REQUEST_LINE_SEPARATOR = "\r\n";
@@ -46,12 +53,14 @@ public class KeyMapEntriesClient extends BaseClient {
 
     private static final String BATCH_UPDATE_CHANGE_SET_END_TEMPLATE = "--%s--" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
+    private static final String COMMON_PART_OF_BODY = "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                      "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                      "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                      "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                      "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR;
+
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_ADDING_VALUE_TEMPLATE = "POST KeyMapEntryValues HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                         COMMON_PART_OF_BODY +
                                                                                          "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
                                                                                          "Content-Length: %d" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
                                                                                          "%s" + BATCH_REQUEST_LINE_SEPARATOR;
@@ -59,21 +68,13 @@ public class KeyMapEntriesClient extends BaseClient {
     private static final String PAYLOAD_FOR_ADDING_VALUE_TEMPLATE = "{\"name\":\"%s\",\"value\":\"%s\",\"map_name\":\"%s\",\"keyMapEntry\":{\"__metadata\":{\"uri\":\"KeyMapEntries('%s')\"}}}";
 
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE = "PUT KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+                                                                                           COMMON_PART_OF_BODY +
                                                                                            "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
                                                                                            "Content-Length: %s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
                                                                                            "{\"value\":\"%s\"}" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE = "DELETE KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
+                                                                                           COMMON_PART_OF_BODY + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
     public KeyMapEntriesClient(HttpClientsFactory httpClientsFactory) {
         super(httpClientsFactory);
@@ -91,18 +92,30 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public KeyMapEntryMetaData getKeyMapEntryMetaData(String keyMapEntry, RequestContext requestContext) {
         log.debug("#getKeyMapEntriesList(RequestContext requestContext): {}", requestContext);
+        KeyMapEntryMetaData keyMapEntryMetaData = null;
         try {
-            return executeGet(
-                    requestContext,
-                    String.format(
-                            KEY_MAP_ENTRY,
-                            URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
-                    ),
-                    KeyMapEntriesParser::buildKeyMapEntryMetaData
+            keyMapEntryMetaData = executeGet(
+                requestContext,
+                format(
+                    KEY_MAP_ENTRY,
+                    URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
+                ),
+                KeyMapEntriesParser::buildKeyMapEntryMetaData
             );
         } catch (UnsupportedEncodingException ex) {
             throw new ClientIntegrationException("Couldn't get key map entry meta data: " + ex.getMessage(), ex);
+        } catch (HttpStatusCodeException ex) {
+            if (!NOT_FOUND.equals(ex.getStatusCode())) {
+                throw ex;
+            }
+        } catch (ClientIntegrationException ex) {
+            if (!(ex.getCause() instanceof HttpStatusCodeException) ||
+                !NOT_FOUND.equals(((HttpStatusCodeException)ex.getCause()).getStatusCode())
+            ) {
+                throw ex;
+            }
         }
+        return keyMapEntryMetaData;
     }
 
     public List<KeyMapEntryValue> getKeyMapEntryValues(String keyMapEntry, RequestContext requestContext) {
@@ -111,7 +124,7 @@ public class KeyMapEntriesClient extends BaseClient {
         try {
             return executeGet(
                     requestContext,
-                    String.format(
+                    format(
                             KEY_MAP_ENTRY_VALUES_WITH_PARAMETERS,
                             URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
                     ),
@@ -157,6 +170,19 @@ public class KeyMapEntriesClient extends BaseClient {
         );
     }
 
+    public void deleteKeyMapEntry(String keyMapEntryId, RequestContext requestContext) {
+        log.debug("#deleteKeyMapEntry(String keyMapEntryId, RequestContext requestContext): {}, {}", keyMapEntryId, requestContext);
+        executeMethod(
+            requestContext,
+            KEY_MAP_ENTRY_VALUES,
+            format(KEY_MAP_ENTRIES_WITH_NAME, keyMapEntryId),
+            (url, token, restTemplateWrapper) -> {
+                deleteKeyMapEntry(keyMapEntryId, url, token, restTemplateWrapper.getRestTemplate());
+                return null;
+            }
+        );
+    }
+
     public void updateKeyMapEntry(String keyMapEntry, Map<String, String> keyToValueMap, RequestContext requestContext) {
         log.debug("#updateKeyMapEntry(String keyMapEntry, Map<String, String> keyToValueMap, RequestContext requestContext): {}, {}",
                 keyMapEntry, requestContext);
@@ -164,7 +190,7 @@ public class KeyMapEntriesClient extends BaseClient {
         List<String> keyMapEntries = getKeyMapEntries(requestContext);
 
         if (!keyMapEntries.contains(keyMapEntry)) {
-            throw new ClientIntegrationException(String.format(
+            throw new ClientIntegrationException(format(
                     "Couldn't update key map entry %s, because it's not exist",
                     keyMapEntry
             ));
@@ -278,7 +304,7 @@ public class KeyMapEntriesClient extends BaseClient {
         executeMethod(
                 requestContext,
                 KEY_MAP_ENTRY_VALUES,
-                String.format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName),
+                format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName),
                 (url, token, restTemplateWrapper) -> {
                     updateKeyMapEntryValue(
                             keyMapEntry,
@@ -301,7 +327,7 @@ public class KeyMapEntriesClient extends BaseClient {
         executeMethod(
                 requestContext,
                 KEY_MAP_ENTRY_VALUES,
-                String.format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName),
+                format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName),
                 (url, token, restTemplateWrapper) -> {
                     deleteKeyMapEntryValue(keyMapEntry, keyMapEntryValueName, url, token, restTemplateWrapper.getRestTemplate());
                     return null;
@@ -316,9 +342,8 @@ public class KeyMapEntriesClient extends BaseClient {
             String token,
             RestTemplate restTemplate
     ) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-CSRF-Token", token);
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        httpHeaders.setContentType(APPLICATION_JSON_UTF8);
 
         HttpEntity<KeyMapEntryMetaData> httpEntity = new HttpEntity<>(keyMapEntryMetaData, httpHeaders);
 
@@ -330,6 +355,26 @@ public class KeyMapEntriesClient extends BaseClient {
                     keyMapEntryMetaData.getName(),
                     responseEntity.getStatusCode().value(),
                     responseEntity.getBody())
+            );
+        }
+    }
+
+    private void deleteKeyMapEntry(
+        String keyMapEntryId,
+        String url,
+        String token,
+        RestTemplate restTemplate
+    ) {
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        HttpEntity<Void> httpEntity = new HttpEntity<>(httpHeaders);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, DELETE, httpEntity, String.class);
+
+        if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
+            throw new ClientIntegrationException(format(
+                "Couldn't delete key map entry %s: Code: %d, Message: %s",
+                keyMapEntryId,
+                responseEntity.getStatusCode().value(),
+                responseEntity.getBody())
             );
         }
     }
@@ -370,13 +415,13 @@ public class KeyMapEntriesClient extends BaseClient {
         }
 
         StringBuilder changeSets = new StringBuilder();
-        String changeSetSeparator = String.format("changeset_%s", UUID.randomUUID());
+        String changeSetSeparator = format("changeset_%s", UUID.randomUUID());
         String requestId = UUID.randomUUID().toString();
 
         for (Map.Entry<String, String> valueForAdding : valuesForAdding.entrySet()) {
-            changeSets.append(String.format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
+            changeSets.append(format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
 
-            String payload = String.format(
+            String payload = format(
                     PAYLOAD_FOR_ADDING_VALUE_TEMPLATE,
                     valueForAdding.getKey(),
                     valueForAdding.getValue(),
@@ -384,7 +429,7 @@ public class KeyMapEntriesClient extends BaseClient {
                     URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20")
             );
 
-            changeSets.append(String.format(
+            changeSets.append(format(
                     BATCH_UPDATE_CHANGE_SET_BODY_FOR_ADDING_VALUE_TEMPLATE,
                     requestId,
                     payload.length(),
@@ -393,9 +438,9 @@ public class KeyMapEntriesClient extends BaseClient {
         }
 
         for (Map.Entry<String, String> valueForUpdating : valuesForUpdating.entrySet()) {
-            changeSets.append(String.format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
+            changeSets.append(format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
 
-            changeSets.append(String.format(
+            changeSets.append(format(
                     BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE,
                     URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20"),
                     URLEncoder.encode(valueForUpdating.getKey(), StandardCharsets.UTF_8.name()).replace("+", "%20"),
@@ -406,9 +451,9 @@ public class KeyMapEntriesClient extends BaseClient {
         }
 
         for (Map.Entry<String, String> valueForDeletion : valuesForDeletion.entrySet()) {
-            changeSets.append(String.format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
+            changeSets.append(format(BATCH_UPDATE_CHANGE_SET_START_TEMPLATE, changeSetSeparator));
 
-            changeSets.append(String.format(
+            changeSets.append(format(
                     BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE,
                     URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20"),
                     URLEncoder.encode(valueForDeletion.getKey(), StandardCharsets.UTF_8.name()).replace("+", "%20"),
@@ -416,10 +461,10 @@ public class KeyMapEntriesClient extends BaseClient {
             ));
         }
 
-        changeSets.append(String.format(BATCH_UPDATE_CHANGE_SET_END_TEMPLATE, changeSetSeparator));
+        changeSets.append(format(BATCH_UPDATE_CHANGE_SET_END_TEMPLATE, changeSetSeparator));
 
-        String bodySeparator = String.format("batch_%s", UUID.randomUUID());
-        String body = String.format(
+        String bodySeparator = format("batch_%s", UUID.randomUUID());
+        String body = format(
                 BATCH_UPDATE_BODY_TEMPLATE,
                 bodySeparator,
                 changeSetSeparator,
@@ -427,16 +472,15 @@ public class KeyMapEntriesClient extends BaseClient {
                 bodySeparator
         );
 
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-CSRF-Token", token);
-        httpHeaders.add("Content-Type", String.format("multipart/mixed;boundary=%s", bodySeparator));
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        httpHeaders.add("Content-Type", format("multipart/mixed;boundary=%s", bodySeparator));
 
         HttpEntity<String> httpEntity = new HttpEntity<>(body, httpHeaders);
 
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, httpEntity, String.class);
 
         if (!HttpStatus.ACCEPTED.equals(responseEntity.getStatusCode())) {
-            throw new ClientIntegrationException(String.format(
+            throw new ClientIntegrationException(format(
                     "Couldn't update key map entry %s: Code: %d, Message: %s",
                     keyMapEntry,
                     responseEntity.getStatusCode().value(),
@@ -453,11 +497,10 @@ public class KeyMapEntriesClient extends BaseClient {
             String token,
             RestTemplate restTemplate
     ) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-CSRF-Token", token);
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        httpHeaders.setContentType(APPLICATION_JSON_UTF8);
 
-        String body = String.format(
+        String body = format(
                 "{" +
                 "  \"map_name\": \"%s\"," +
                 "  \"name\": \"%s\"," +
@@ -481,7 +524,7 @@ public class KeyMapEntriesClient extends BaseClient {
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.POST, httpEntity, String.class);
 
         if (!HttpStatus.CREATED.equals(responseEntity.getStatusCode())) {
-            throw new ClientIntegrationException(String.format(
+            throw new ClientIntegrationException(format(
                     "Couldn't create key value entry %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
                     keyMapEntry,
@@ -499,11 +542,10 @@ public class KeyMapEntriesClient extends BaseClient {
             String token,
             RestTemplate restTemplate
     ) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-CSRF-Token", token);
-        httpHeaders.setContentType(MediaType.APPLICATION_JSON_UTF8);
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
+        httpHeaders.setContentType(APPLICATION_JSON_UTF8);
 
-        String body = String.format(
+        String body = format(
                 "{" +
                 "  \"value\": \"%s\"" +
                 "}",
@@ -515,7 +557,7 @@ public class KeyMapEntriesClient extends BaseClient {
         ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.PUT, httpEntity, String.class);
 
         if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
-            throw new ClientIntegrationException(String.format(
+            throw new ClientIntegrationException(format(
                     "Couldn't update key value entry %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
                     keyMapEntry,
@@ -526,14 +568,13 @@ public class KeyMapEntriesClient extends BaseClient {
     }
 
     private void deleteKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String url, String token, RestTemplate restTemplate) {
-        HttpHeaders httpHeaders = new HttpHeaders();
-        httpHeaders.add("X-CSRF-Token", token);
+        HttpHeaders httpHeaders = createHttpHeadersWithCSRFToken(token);
         HttpEntity<Void> httpEntity = new HttpEntity<>(httpHeaders);
 
-        ResponseEntity<String> responseEntity = restTemplate.exchange(url, HttpMethod.DELETE, httpEntity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(url, DELETE, httpEntity, String.class);
 
         if (!HttpStatus.NO_CONTENT.equals(responseEntity.getStatusCode())) {
-            throw new ClientIntegrationException(String.format(
+            throw new ClientIntegrationException(format(
                     "Couldn't delete key map entry value %s in key map entry %s: Code: %d, Message: %s",
                     keyMapEntryValueName,
                     keyMapEntry,
