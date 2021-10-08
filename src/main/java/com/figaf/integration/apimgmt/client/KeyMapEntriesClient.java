@@ -105,10 +105,14 @@ public class KeyMapEntriesClient extends BaseClient {
         } catch (UnsupportedEncodingException ex) {
             throw new ClientIntegrationException("Couldn't get key map entry meta data: " + ex.getMessage(), ex);
         } catch (HttpStatusCodeException ex) {
+            //this case happens when we try to get non existing object on cloud foundry system and
+            //we didn't make Auth request for current 'restTemplateWrapperKey' before
             if (!NOT_FOUND.equals(ex.getStatusCode())) {
                 throw ex;
             }
         } catch (ClientIntegrationException ex) {
+            //this case happens when we try to get non existing object on cloud foundry system and
+            //we made Auth request for current 'restTemplateWrapperKey' before
             if (!(ex.getCause() instanceof HttpStatusCodeException) ||
                 !NOT_FOUND.equals(((HttpStatusCodeException)ex.getCause()).getStatusCode())
             ) {

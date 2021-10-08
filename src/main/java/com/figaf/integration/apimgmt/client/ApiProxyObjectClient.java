@@ -54,10 +54,14 @@ public class ApiProxyObjectClient extends BaseClient {
                 ApiProxyObjectParser::buildApiProxyMetaData
             );
         } catch (HttpStatusCodeException ex) {
+            //this case happens when we try to get non existing object on cloud foundry system and
+            //we didn't make Auth request for current 'restTemplateWrapperKey' before
             if (!NOT_FOUND.equals(ex.getStatusCode())) {
                 throw ex;
             }
         } catch (ClientIntegrationException ex) {
+            //this case happens when we try to get non existing object on cloud foundry system and
+            //we made Auth request for current 'restTemplateWrapperKey' before
             if (!(ex.getCause() instanceof HttpStatusCodeException) ||
                 !NOT_FOUND.equals(((HttpStatusCodeException)ex.getCause()).getStatusCode())
             ) {
