@@ -9,7 +9,9 @@ import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.*;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
@@ -37,6 +39,11 @@ public class ApiProxyObjectClient extends BaseClient {
 
     public ApiProxyObjectClient(HttpClientsFactory httpClientsFactory) {
         super(httpClientsFactory);
+    }
+
+    public List<ApiProxyMetaData> getPublicApiObjectMetaData(RequestContext requestContext) {
+        log.debug("#getApiObjectMetaData(RequestContext requestContext): {}", requestContext);
+        return executeGetPublicApiAndReturnResponseBody(requestContext, API_PROXIES, ApiProxyObjectParser::buildApiProxyMetaDataList);
     }
 
     public List<ApiProxyMetaData> getApiObjectMetaData(RequestContext requestContext) {
@@ -88,13 +95,44 @@ public class ApiProxyObjectClient extends BaseClient {
 
     public byte[] downloadApiProxy(RequestContext requestContext, String apiProxyName) {
         log.debug("#downloadApiProxy(RequestContext requestContext, String apiProxyName): {}, {}", requestContext, apiProxyName);
-        return executeGet(
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.add("Accept", "application/json");
+        return executeGetPublicApiAndReturnResponseBody(
                 requestContext,
                 String.format(API_PROXIES_TRANSPORT_WITH_NAME, apiProxyName),
+                httpHeaders,
                 resolvedBody -> resolvedBody,
                 byte[].class
         );
     }
+
+    public <R> R downloadApiProxyPublicApi(
+            RequestContext requestContext,
+            String apiProxyName,
+            ResponseHandlerCallback<R, ResponseEntity<String>> responseHandlerCallback
+    ) {
+        try {
+            return executeMethodPublicApi(
+                    requestContext,
+                    String.format(API_PROXIES_TRANSPORT_WITH_NAME, apiProxyName),
+                    null,
+                    HttpMethod.GET,
+                    responseHandlerCallback
+            );
+        } catch (HttpClientErrorException.NotFound notFoundException) {
+            log.debug("Can't downloadApiProxyPublicApi (NotFound error): {}", ExceptionUtils.getMessage(notFoundException));
+            try {
+                return responseHandlerCallback.apply(null);
+            } catch (Exception ex) {
+                log.error("Can't apply responseHandlerCallback: ", ex);
+                throw new ClientIntegrationException(ex);
+            }
+        } catch (Exception ex) {
+            log.error("Can't downloadApiProxyPublicApi: ", ex);
+            throw new ClientIntegrationException(ex);
+        }
+    }
+
 
     public void uploadApiProxy(RequestContext requestContext, String apiProxyName, byte[] bundledApiProxy) {
         log.debug("#uploadApiProxy(RequestContext requestContext, String apiProxyName, byte[] bundledApiProxy): {}, {}", requestContext, apiProxyName);

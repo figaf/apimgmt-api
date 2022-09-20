@@ -4,6 +4,7 @@ import com.figaf.integration.apimgmt.entity.KeyMapEntryMetaData;
 import com.figaf.integration.apimgmt.entity.KeyMapEntryValue;
 import com.figaf.integration.apimgmt.response_parser.KeyMapEntriesParser;
 import com.figaf.integration.common.client.BaseClient;
+import com.figaf.integration.common.entity.AuthenticationType;
 import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.exception.ClientIntegrationException;
 import com.figaf.integration.common.factory.HttpClientsFactory;
@@ -82,6 +83,9 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public List<String> getKeyMapEntries(RequestContext requestContext) {
         log.debug("#getKeyMapEntries(RequestContext requestContext): {}", requestContext);
+        if(requestContext.getAuthenticationType().equals(AuthenticationType.OAUTH)){
+            return executeGetPublicApiAndReturnResponseBody(requestContext, KEY_MAP_ENTRIES_WITH_PARAMETERS, KeyMapEntriesParser::buildKeyMapEntryList);
+        }
         return executeGet(requestContext, KEY_MAP_ENTRIES_WITH_PARAMETERS, KeyMapEntriesParser::buildKeyMapEntryList);
     }
 

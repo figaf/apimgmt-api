@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilya Nesterov
  */
 @Slf4j
+@Disabled
 class KeyMapEntriesClientTest {
 
     private static final String API_TEST_KEY_MAP_ENTRY_NAME = "FigafApiTestKeyMapEntry";

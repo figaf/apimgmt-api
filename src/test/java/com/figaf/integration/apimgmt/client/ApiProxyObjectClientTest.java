@@ -8,6 +8,7 @@ import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -20,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * @author Ilya Nesterov
  */
 @Slf4j
+@Disabled
 class ApiProxyObjectClientTest {
 
     private static final String API_TEST_API_PROXY_NAME = "FigafApiTestApiProxy";
