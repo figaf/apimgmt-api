@@ -16,12 +16,8 @@ public class AgentTestDataProvider extends AbstractAgentTestDataProvider {
     public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
         return Stream.of(
                 Arguments.of(
-                    buildAgentTestData(
-                        Paths.get("src/test/resources/agent-test-data/apimgmt-cf-1")
-                    ),
-                    buildAgentTestData(
-                        Paths.get("src/test/resources/agent-test-data/apimgmt-cf-2")
-                    )
+                        buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-basic")),
+                        buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-oauth"))
                 )
         );
     }

@@ -1,3 +1,8 @@
+agent-test-data.apimgmt-cf-oauth.clientId=
+agent-test-data.apimgmt-cf-oauth.clientSecret=
+agent-test-data.apimgmt-cf-oauth.tokenUrl=
+agent-test-data.apimgmt-cf-oauth.publicUrl=
+
 agent-test-data.apimgmt-neo-1.host=
 agent-test-data.apimgmt-neo-1.username=
 agent-test-data.apimgmt-neo-1.password=
