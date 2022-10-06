@@ -13,12 +13,10 @@ import java.util.stream.Stream;
 public class AgentTestDataProvider extends AbstractAgentTestDataProvider {
 
     @Override
-    public Stream<? extends Arguments> provideArguments(ExtensionContext context) throws Exception {
+    public Stream<? extends Arguments> provideArguments(ExtensionContext context) {
         return Stream.of(
-                Arguments.of(
-                        buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-basic")),
-                        buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-oauth"))
-                )
+                Arguments.of(buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-basic"))),
+                Arguments.of(buildAgentTestData(Paths.get("src/test/resources/agent-test-data/apimgmt-cf-oauth")))
         );
     }
 }
