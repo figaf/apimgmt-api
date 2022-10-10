@@ -8,7 +8,6 @@ import com.figaf.integration.common.entity.RequestContext;
 import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
@@ -16,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatNoException;
 
 /**
  * @author Ilya Nesterov
@@ -37,21 +37,16 @@ class KeyMapEntriesClientTest {
     void test_getKeyMapEntries(AgentTestData agentTestData) {
         List<String> keyMapEntries = keyMapEntriesClient.getKeyMapEntries(agentTestData.createRequestContext());
         log.debug("{} KeyMap entries were found", keyMapEntries.size());
-
         assertThat(keyMapEntries).isNotEmpty();
     }
 
-    // was used for debugging purpose
-    @Disabled
     @ParameterizedTest
     @ArgumentsSource(AgentTestDataProvider.class)
     void test_createOrUpdateKeyMapEntry(AgentTestData agentTestData) {
-        KeyMapEntryMetaData keyMapEntryMetaData = keyMapEntriesClient.getKeyMapEntryMetaData("encrypt2KVM", agentTestData.createRequestContext());
-        List<KeyMapEntryValue> keyMapEntryValues = keyMapEntriesClient.getKeyMapEntryValues("encrypt2KVM", agentTestData.createRequestContext());
-        keyMapEntryValues.get(0).setValue("value");
-        keyMapEntryValues.get(1).setValue("value");
-        keyMapEntryMetaData.setKeyMapEntryValues(keyMapEntryValues);
-        keyMapEntriesClient.createOrUpdateKeyMapEntry(keyMapEntryMetaData, agentTestData.createRequestContext());
+        RequestContext requestContext = agentTestData.createRequestContext();
+        KeyMapEntryMetaData keyMapEntryMetaData = getOrCreateDummyKeyMapEntry(requestContext);
+        keyMapEntryMetaData.setName("TEST-1");
+        assertThatNoException().isThrownBy(() -> keyMapEntriesClient.createOrUpdateKeyMapEntry(keyMapEntryMetaData, requestContext));
     }
 
     @ParameterizedTest
@@ -66,6 +61,12 @@ class KeyMapEntriesClientTest {
     }
 
     private KeyMapEntryMetaData createDummyKeyMapEntry(RequestContext requestContext) {
+        KeyMapEntryMetaData keyMapEntryMetaData = prepareKeyMapEntryMetaData();
+        keyMapEntriesClient.createOrUpdateKeyMapEntry(keyMapEntryMetaData, requestContext);
+        return keyMapEntriesClient.getKeyMapEntryMetaData(API_TEST_KEY_MAP_ENTRY_NAME, requestContext);
+    }
+
+    private static KeyMapEntryMetaData prepareKeyMapEntryMetaData() {
         KeyMapEntryMetaData keyMapEntryMetaData = new KeyMapEntryMetaData();
         keyMapEntryMetaData.setName(API_TEST_KEY_MAP_ENTRY_NAME);
         keyMapEntryMetaData.setEncrypted(false);
@@ -78,8 +79,7 @@ class KeyMapEntriesClientTest {
             "value"
         );
         keyMapEntryMetaData.getKeyMapEntryValues().add(keyMapEntryValue);
-        keyMapEntriesClient.createOrUpdateKeyMapEntry(keyMapEntryMetaData, requestContext);
-        return keyMapEntriesClient.getKeyMapEntryMetaData(API_TEST_KEY_MAP_ENTRY_NAME, requestContext);
+        return keyMapEntryMetaData;
     }
 
     private KeyMapEntryMetaData getOrCreateDummyKeyMapEntry(RequestContext requestContext) {
