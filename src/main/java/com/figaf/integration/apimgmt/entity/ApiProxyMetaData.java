@@ -20,7 +20,7 @@ public class ApiProxyMetaData {
     private String createdBy;
     private Date modificationDate;
     private String modifiedBy;
-
+    private boolean isChanged;
     private boolean isVersioned;
 
 }
