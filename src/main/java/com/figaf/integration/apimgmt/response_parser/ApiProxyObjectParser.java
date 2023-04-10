@@ -68,15 +68,15 @@ public class ApiProxyObjectParser {
 
                     String createdDateStr = Utils.optString(innerObjectLifeCycleElement, "created_at");
                     apiProxyMetaData.setCreationDate(StringUtils.isNotBlank(createdDateStr)
-                        ? new Timestamp(Long.parseLong(createdDateStr.replaceAll("[^0-9]", "")))
-                        : null
+                            ? new Timestamp(Long.parseLong(createdDateStr.replaceAll("[^0-9]", "")))
+                            : null
                     );
                     String createdBy = Utils.optString(innerObjectLifeCycleElement, "created_by");
                     apiProxyMetaData.setCreatedBy(createdBy);
                     String changedDateStr = Utils.optString(innerObjectLifeCycleElement, "changed_at");
                     apiProxyMetaData.setModificationDate(StringUtils.isNotBlank(changedDateStr)
-                        ? new Timestamp(Long.parseLong(changedDateStr.replaceAll("[^0-9]", "")))
-                        : null
+                            ? new Timestamp(Long.parseLong(changedDateStr.replaceAll("[^0-9]", "")))
+                            : null
                     );
                     String changedBy = Utils.optString(innerObjectLifeCycleElement, "changed_by");
                     apiProxyMetaData.setModifiedBy(changedBy);
@@ -96,20 +96,21 @@ public class ApiProxyObjectParser {
         apiProxyMetaData.setVersion(apiProxyJsonObject.getString("version"));
         apiProxyMetaData.setState(apiProxyJsonObject.getString("state"));
         apiProxyMetaData.setApiType(apiProxyJsonObject.getString("service_code"));
+        apiProxyMetaData.setChanged(apiProxyJsonObject.getBoolean("hasChanges"));
         String isVersioned = Utils.optString(apiProxyJsonObject, "isVersioned");
         apiProxyMetaData.setVersioned(StringUtils.isNotBlank(isVersioned) && Boolean.parseBoolean(isVersioned));
 
         JSONObject apiProxyLifeCycleElement = apiProxyJsonObject.getJSONObject("life_cycle");
         String createdAt = Utils.optString(apiProxyLifeCycleElement, "created_at");
         apiProxyMetaData.setCreationDate(createdAt != null
-            ? new Timestamp(Long.parseLong(createdAt.replaceAll("[^0-9]", "")))
-            : null
+                ? new Timestamp(Long.parseLong(createdAt.replaceAll("[^0-9]", "")))
+                : null
         );
         apiProxyMetaData.setCreatedBy(Utils.optString(apiProxyLifeCycleElement, "created_by"));
         String changedAt = Utils.optString(apiProxyLifeCycleElement, "changed_at");
         apiProxyMetaData.setModificationDate(changedAt != null
-            ? new Timestamp(Long.parseLong(changedAt.replaceAll("[^0-9]", "")))
-            : null
+                ? new Timestamp(Long.parseLong(changedAt.replaceAll("[^0-9]", "")))
+                : null
         );
         apiProxyMetaData.setModifiedBy(Utils.optString(apiProxyLifeCycleElement, "changed_by"));
 
