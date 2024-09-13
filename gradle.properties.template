@@ -1,5 +1,5 @@
 enableSnapshots=false
-snapshotsRepoUrl=http://localhost:8097/nexus
+snapshotsRepoUrl=http://sapserv02.figaf.local:8097/nexus
 snapshotsRepoUsername=user
 snapshotsRepoPassword=1234
 
