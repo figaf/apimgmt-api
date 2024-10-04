@@ -2,7 +2,6 @@ package com.figaf.integration.apimgmt.client;
 
 import com.figaf.integration.apimgmt.entity.ApiProxyMetaData;
 import com.figaf.integration.apimgmt.response_parser.ApiProxyObjectParser;
-import com.figaf.integration.apimgmt.response_parser.KeyMapEntriesParser;
 import com.figaf.integration.common.client.BaseClient;
 import com.figaf.integration.common.entity.AuthenticationType;
 import com.figaf.integration.common.entity.RequestContext;
@@ -11,13 +10,10 @@ import com.figaf.integration.common.factory.HttpClientsFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.http.*;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;

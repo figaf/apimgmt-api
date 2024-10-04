@@ -4,13 +4,17 @@ plugins {
 }
 
 group = 'com.github.figaf'
-version = '1.14'
+version = '2.0-SNAPSHOT'
 
 ext {
     enableSnapshotsForDependencyResolutionAndPublishing = project.findProperty('enableSnapshots') ?: 'false'
     snapshotsRepoUrl = project.findProperty('snapshotsRepoUrl') ?: ''
     snapshotsRepoUsername = project.findProperty('snapshotsRepoUsername') ?: ''
     snapshotsRepoPassword = project.findProperty('snapshotsRepoPassword') ?: ''
+
+    lombokVersion = '1.18.34'
+    integrationCommonsVersion = '2.0-SNAPSHOT'
+    integrationCommonsTestVersion = '2.0-SNAPSHOT'
 }
 
 repositories {
@@ -30,23 +34,18 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.projectlombok:lombok:1.18.8'
-    annotationProcessor 'org.projectlombok:lombok:1.18.8'
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    api 'com.github.figaf:integration-commons:1.16'
+    api "com.github.figaf:integration-commons:${integrationCommonsVersion}"
 
-    implementation 'org.slf4j:slf4j-api:1.7.25'
+    testImplementation "com.github.figaf:integration-commons-test:${integrationCommonsTestVersion}"
+}
 
-    testCompileOnly 'org.projectlombok:lombok:1.18.8'
-    testAnnotationProcessor 'org.projectlombok:lombok:1.18.8'
-
-    testImplementation 'com.github.figaf:integration-commons-test:1.4'
-    testImplementation 'org.assertj:assertj-core:3.18.0'
-    testImplementation 'org.mockito:mockito-core:3.6.0'
-    testImplementation 'org.mockito:mockito-junit-jupiter:3.6.0'
-    testImplementation 'ch.qos.logback:logback-classic:1.2.3'
-
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+java {
+    withSourcesJar()
 }
 
 test {
