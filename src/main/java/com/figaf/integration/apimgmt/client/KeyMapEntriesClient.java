@@ -44,38 +44,38 @@ public class KeyMapEntriesClient extends BaseClient {
     private static final String BATCH_REQUEST_LINE_SEPARATOR = "\r\n";
 
     private static final String BATCH_UPDATE_BODY_TEMPLATE = "--%s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                             "Content-Type: multipart/mixed; boundary=%s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
-                                                             "%s" +
-                                                             "--%s--" + BATCH_REQUEST_LINE_SEPARATOR;
+            "Content-Type: multipart/mixed; boundary=%s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
+            "%s" +
+            "--%s--" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String BATCH_UPDATE_CHANGE_SET_START_TEMPLATE = "--%s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                         "Content-Type: application/http" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                         "Content-Transfer-Encoding: binary" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
+            "Content-Type: application/http" + BATCH_REQUEST_LINE_SEPARATOR +
+            "Content-Transfer-Encoding: binary" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String BATCH_UPDATE_CHANGE_SET_END_TEMPLATE = "--%s--" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String COMMON_PART_OF_BODY = "RequestId: %s" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                      "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                      "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                      "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                      "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR;
+            "Accept-Language: en" + BATCH_REQUEST_LINE_SEPARATOR +
+            "Accept: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+            "MaxDataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR +
+            "DataServiceVersion: 2.0" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_ADDING_VALUE_TEMPLATE = "POST KeyMapEntryValues HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         COMMON_PART_OF_BODY +
-                                                                                         "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "Content-Length: %d" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                         "%s" + BATCH_REQUEST_LINE_SEPARATOR;
+            COMMON_PART_OF_BODY +
+            "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+            "Content-Length: %d" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
+            "%s" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String PAYLOAD_FOR_ADDING_VALUE_TEMPLATE = "{\"name\":\"%s\",\"value\":\"%s\",\"map_name\":\"%s\",\"keyMapEntry\":{\"__metadata\":{\"uri\":\"KeyMapEntries('%s')\"}}}";
 
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_UPDATING_VALUE_TEMPLATE = "PUT KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           COMMON_PART_OF_BODY +
-                                                                                           "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "Content-Length: %s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           "{\"value\":\"%s\"}" + BATCH_REQUEST_LINE_SEPARATOR;
+            COMMON_PART_OF_BODY +
+            "Content-Type: application/json" + BATCH_REQUEST_LINE_SEPARATOR +
+            "Content-Length: %s" + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR +
+            "{\"value\":\"%s\"}" + BATCH_REQUEST_LINE_SEPARATOR;
 
     private static final String BATCH_UPDATE_CHANGE_SET_BODY_FOR_DELETION_VALUE_TEMPLATE = "DELETE KeyMapEntryValues(map_name='%s',name='%s') HTTP/1.1" + BATCH_REQUEST_LINE_SEPARATOR +
-                                                                                           COMMON_PART_OF_BODY + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
+            COMMON_PART_OF_BODY + BATCH_REQUEST_LINE_SEPARATOR + BATCH_REQUEST_LINE_SEPARATOR;
 
     public KeyMapEntriesClient(HttpClientsFactory httpClientsFactory) {
         super(httpClientsFactory);
@@ -83,7 +83,7 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public List<String> getKeyMapEntries(RequestContext requestContext) {
         log.debug("#getKeyMapEntries(RequestContext requestContext): {}", requestContext);
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             return executeGetPublicApiAndReturnResponseBody(requestContext, KEY_MAP_ENTRIES_WITH_PARAMETERS, KeyMapEntriesParser::buildKeyMapEntryList);
         }
         return executeGet(requestContext, KEY_MAP_ENTRIES_WITH_PARAMETERS, KeyMapEntriesParser::buildKeyMapEntryList);
@@ -91,7 +91,7 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public List<KeyMapEntryMetaData> getKeyMapEntryMetaDataList(RequestContext requestContext) {
         log.debug("#getKeyMapEntriesList(RequestContext requestContext): {}", requestContext);
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             return executeMethodPublicApi(
                     requestContext,
                     KEY_MAP_ENTRIES_WITH_PARAMETERS,
@@ -113,7 +113,7 @@ public class KeyMapEntriesClient extends BaseClient {
         try {
             String encodedEntry = URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20");
             String url = format(KEY_MAP_ENTRY, encodedEntry);
-            if(OAUTH.equals(requestContext.getAuthenticationType())) {
+            if (OAUTH.equals(requestContext.getAuthenticationType())) {
                 keyMapEntryMetaData = executeMethodPublicApi(
                         requestContext,
                         url,
@@ -136,7 +136,7 @@ public class KeyMapEntriesClient extends BaseClient {
             //this case happens when we try to get non existing object on cloud foundry system and
             //we made Auth request for current 'restTemplateWrapperKey' before
             if (!(ex.getCause() instanceof HttpStatusCodeException) ||
-                !NOT_FOUND.equals(((HttpStatusCodeException)ex.getCause()).getStatusCode())
+                    !NOT_FOUND.equals(((HttpStatusCodeException) ex.getCause()).getStatusCode())
             ) {
                 throw ex;
             }
@@ -150,7 +150,7 @@ public class KeyMapEntriesClient extends BaseClient {
         try {
             String encodedKeyMapEntry = URLEncoder.encode(keyMapEntry, StandardCharsets.UTF_8.name()).replace("+", "%20");
             String path = format(KEY_MAP_ENTRY_VALUES_WITH_PARAMETERS, encodedKeyMapEntry);
-            if(OAUTH.equals(requestContext.getAuthenticationType())) {
+            if (OAUTH.equals(requestContext.getAuthenticationType())) {
                 return executeMethodPublicApi(
                         requestContext,
                         path,
@@ -196,7 +196,7 @@ public class KeyMapEntriesClient extends BaseClient {
                     keyMapEntryMetaData.getName(), requestContext);
         }
 
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             executeMethodPublicApi(
                     requestContext,
                     KEY_MAP_ENTRIES,
@@ -229,7 +229,7 @@ public class KeyMapEntriesClient extends BaseClient {
 
     public void deleteKeyMapEntry(String keyMapEntryId, RequestContext requestContext) {
         log.debug("#deleteKeyMapEntry(String keyMapEntryId, RequestContext requestContext): {}, {}", keyMapEntryId, requestContext);
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             executeDeletePublicApi(
                     requestContext,
                     format(KEY_MAP_ENTRIES_WITH_NAME, keyMapEntryId),
@@ -273,7 +273,7 @@ public class KeyMapEntriesClient extends BaseClient {
 
         Map<String, String> remoteKeyToValueMap = getKeyToValueMap(keyMapEntry, requestContext);
 
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             String bodySeparator = format("batch_%s", UUID.randomUUID());
             Optional<String> requestBody = prepareRequestBodyForUpdatingKeyMap(
                     keyMapEntry,
@@ -350,11 +350,25 @@ public class KeyMapEntriesClient extends BaseClient {
         }
     }
 
+    public void createOrUpdateKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String newKeyMapEntryValue, RequestContext requestContext) {
+        List<KeyMapEntryValue> keyMapEntryValues = getKeyMapEntryValues(keyMapEntry, requestContext);
+        for (KeyMapEntryValue currentKeyMapEntryValue : keyMapEntryValues) {
+            if (currentKeyMapEntryValue.getName().equals(keyMapEntryValueName)) {
+                if (!newKeyMapEntryValue.equals(currentKeyMapEntryValue.getValue())) {
+                    updateKeyMapEntryValue(keyMapEntry, keyMapEntryValueName, newKeyMapEntryValue, requestContext);
+                }
+                return;
+            }
+        }
+
+        addKeyMapEntryValue(keyMapEntry, keyMapEntryValueName, newKeyMapEntryValue, requestContext);
+    }
+
     public void addKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String keyMapEntryValue, RequestContext requestContext) {
         log.debug("#addKeyMapEntryValue(String keyMapEntry, String keyMapEntryValueName, String keyMapEntryValue, RequestContext requestContext): {}, {}, {}",
                 keyMapEntry, keyMapEntryValueName, requestContext);
 
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             String requestBody = prepareRequestBodyForNewEntryValue(keyMapEntry, keyMapEntryValueName, keyMapEntryValue);
             executeMethodPublicApi(
                     requestContext,
@@ -400,7 +414,7 @@ public class KeyMapEntriesClient extends BaseClient {
 
         String pathForMainRequest = format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName);
 
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             String body = format("{ \"value\": \"%s\" }", newKeyMapEntryValue);
             executeMethodPublicApi(
                     requestContext,
@@ -445,7 +459,7 @@ public class KeyMapEntriesClient extends BaseClient {
                 keyMapEntry, keyMapEntryValueName, requestContext);
         String pathForMainRequest = format(KEY_MAP_ENTRY_VALUE, keyMapEntry, keyMapEntryValueName);
 
-        if(OAUTH.equals(requestContext.getAuthenticationType())) {
+        if (OAUTH.equals(requestContext.getAuthenticationType())) {
             executeDeletePublicApi(
                     requestContext,
                     pathForMainRequest,
